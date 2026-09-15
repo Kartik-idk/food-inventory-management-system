@@ -2,12 +2,18 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { batches, products, notifications } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { getBatchForecast } from '@/lib/actions';
+import { getBatchForecast, getSettings } from '@/lib/actions';
 import { sendAlertEmail } from '@/lib/email';
 import { calculateExpiryRisk } from '@/lib/expiry';
 
 export async function POST() {
   try {
+    const appSettings = await getSettings();
+    
+    if (!appSettings.alertsEnabled) {
+      return NextResponse.json({ success: true, message: 'Alerts disabled in settings.', alertsGenerated: 0 });
+    }
+
     const activeBatches = await db.select({
       id: batches.id,
       batchId: batches.batchId,
@@ -25,7 +31,11 @@ export async function POST() {
     for (const b of activeBatches) {
       const { risk } = calculateExpiryRisk(b.expiryDate);
       
-      // Only process CRITICAL and HIGH risk batches for proactive alerts
+      // Check configured risk levels
+      if (risk === 'EXPIRED' && !appSettings.alertExpired) continue;
+      if (risk === 'CRITICAL' && !appSettings.alertCriticalRisk) continue;
+      if (risk === 'HIGH' && !appSettings.alertHighRisk) continue;
+      
       if (risk !== 'CRITICAL' && risk !== 'HIGH' && risk !== 'EXPIRED') continue;
 
       const forecast = await getBatchForecast(b.id);
@@ -73,7 +83,7 @@ ACTION: ${actionText}
 
       // 3. Send Email
       const success = await sendAlertEmail({
-        to: 'store.owner@example.com',
+        to: appSettings.ownerEmail,
         subject: `[${risk}] Expiry Alert for ${b.productName}`,
         body,
       });

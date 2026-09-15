@@ -1,5 +1,5 @@
 // Removed unused sql
-import { text, integer, serial, pgTable, timestamp } from 'drizzle-orm/pg-core';
+import { text, integer, serial, pgTable, timestamp, boolean } from 'drizzle-orm/pg-core';
 
 export const products = pgTable('products', {
   id: serial('id').primaryKey(),
@@ -41,4 +41,17 @@ export const notifications = pgTable('notifications', {
   status: text('status').notNull().default('PENDING'), // 'PENDING', 'SENT', 'FAILED'
   createdAt: timestamp('created_at').notNull().defaultNow(),
   sentAt: timestamp('sent_at'),
+});
+
+export const settings = pgTable('settings', {
+  id: integer('id').primaryKey(),
+  storeName: text('store_name').notNull().default('My Store'),
+  ownerEmail: text('owner_email').notNull().default('store.owner@example.com'),
+  alertsEnabled: boolean('alerts_enabled').notNull().default(true),
+  alertHighRisk: boolean('alert_high_risk').notNull().default(true),
+  alertCriticalRisk: boolean('alert_critical_risk').notNull().default(true),
+  alertExpired: boolean('alert_expired').notNull().default(true),
+  maxDiscountPercentage: integer('max_discount_percentage').notNull().default(50),
+  posApiKeyHash: text('pos_api_key_hash'),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

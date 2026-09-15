@@ -4,6 +4,7 @@ export interface ForecastInput {
   currentStock: number;
   expiryDateStr: string;
   velocity: number; // units per day
+  maxDiscount?: number;
 }
 
 export type RecommendedAction = 'SELL_NORMALLY' | 'DISCOUNT_RECOMMENDED' | 'IMMEDIATE_INTERVENTION';
@@ -24,7 +25,7 @@ export function calculateBaseVelocity(totalSales: number, daysBack: number): num
   return totalSales / daysBack;
 }
 
-export function predictBatchOutcome({ currentStock, expiryDateStr, velocity }: ForecastInput): ForecastResult {
+export function predictBatchOutcome({ currentStock, expiryDateStr, velocity, maxDiscount = 50 }: ForecastInput): ForecastResult {
   const expiryDate = startOfDay(parseISO(expiryDateStr));
   const today = startOfDay(new Date());
   const daysToExpiry = differenceInDays(expiryDate, today);
@@ -46,7 +47,8 @@ export function predictBatchOutcome({ currentStock, expiryDateStr, velocity }: F
       recommendedAction = 'IMMEDIATE_INTERVENTION';
     } else {
       let optimal = -1;
-      for (let d = 5; d <= 50; d += 5) {
+      const limit = maxDiscount;
+      for (let d = 5; d <= limit; d += 5) {
         const simV = simulateDiscount(velocity, d, 2.0);
         const simWastage = currentStock - (simV * effectiveDaysToExpiry);
         if (simWastage <= 0) {

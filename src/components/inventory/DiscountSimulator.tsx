@@ -11,9 +11,10 @@ interface Props {
   expiryDateStr: string;
   baseVelocity: number;
   productPrice: number;
+  maxDiscount: number;
 }
 
-export function DiscountSimulator({ currentStock, expiryDateStr, baseVelocity, productPrice }: Props) {
+export function DiscountSimulator({ currentStock, expiryDateStr, baseVelocity, productPrice, maxDiscount }: Props) {
   const [discountPct, setDiscountPct] = useState(0);
 
   const currentWastage = predictBatchOutcome({
@@ -55,11 +56,11 @@ export function DiscountSimulator({ currentStock, expiryDateStr, baseVelocity, p
               ${originalPrice.toFixed(2)} → <strong className="text-foreground">${newPrice.toFixed(2)}</strong>
             </span>
           </div>
-          <input
-            type="range"
-            min={0}
-            max={80}
-            step={5}
+            <input
+              type="range"
+              min={0}
+              max={maxDiscount}
+              step={5}
             value={discountPct}
             onChange={(e) => setDiscountPct(Number(e.target.value))}
             className="w-full accent-blue-600 dark:accent-blue-400"

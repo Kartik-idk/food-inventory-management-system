@@ -8,6 +8,13 @@
       "when": 1789483326161,
       "tag": "0000_superb_mantis",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789483851490,
+      "tag": "0001_glossy_wrecker",
+      "breakpoints": true
     }
   ]
 }

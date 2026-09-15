@@ -1,4 +1,4 @@
-import { getBatchDetails, getBatchForecast } from "@/lib/actions";
+import { getBatchDetails, getBatchForecast, getSettings } from "@/lib/actions";
 import { getBadgeVariant } from "@/lib/expiry";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +13,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
   const batchId = parseInt(resolvedParams.id, 10);
   const batch = await getBatchDetails(batchId);
   const forecast = await getBatchForecast(batchId);
+  const settings = await getSettings();
 
   if (!batch || !forecast) {
     notFound();
@@ -130,6 +131,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
             expiryDateStr={batch.expiryDate}
             baseVelocity={forecast.baseVelocity}
             productPrice={batch.price}
+            maxDiscount={settings.maxDiscountPercentage}
           />
         </div>
       </div>

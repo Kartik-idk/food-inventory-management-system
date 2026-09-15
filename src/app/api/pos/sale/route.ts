@@ -3,16 +3,25 @@ import { db } from '@/db';
 import { products, batches, inventoryTransactions } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { getSettings } from '@/lib/actions';
+import { createHash } from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const expectedKey = process.env.POS_API_KEY;
-    if (!expectedKey) {
-      return NextResponse.json({ success: false, error: 'Internal Server Error. POS_API_KEY is not configured.' }, { status: 500 });
+    const appSettings = await getSettings();
+    if (!appSettings.posApiKeyHash) {
+      return NextResponse.json({ success: false, error: 'Internal Server Error. POS API Key is not configured.' }, { status: 500 });
     }
 
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== expectedKey) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({ success: false, error: 'Unauthorized. Missing API Key.' }, { status: 401 });
+    }
+
+    const providedKey = authHeader.split(' ')[1];
+    const providedHash = createHash('sha256').update(providedKey).digest('hex');
+
+    if (providedHash !== appSettings.posApiKeyHash) {
       return NextResponse.json({ success: false, error: 'Unauthorized. Invalid API Key.' }, { status: 401 });
     }
 

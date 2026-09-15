@@ -1,7 +1,8 @@
 'use server';
 
 import { db } from "@/db";
-import { products, batches, inventoryTransactions, wasteLogs, notifications } from "@/db/schema";
+import { products, batches, inventoryTransactions, wasteLogs, notifications, settings } from "@/db/schema";
+import { createHash, randomBytes } from "crypto";
 import { eq, desc, sum, sql, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { calculateExpiryRisk } from "./expiry";
@@ -387,11 +388,15 @@ export async function getBatchForecast(batchId: number) {
   // 3. Calculate base velocity (units/day)
   const baseVelocity = calculateBaseVelocity(totalSoldInWindow, 14);
 
-  // 4. Predict outcome
+  // 4. Fetch settings for max discount
+  const appSettings = await getSettings();
+
+  // 5. Predict outcome
   const outcome = predictBatchOutcome({
     currentStock: b.quantity,
     expiryDateStr: b.expiryDate,
     velocity: baseVelocity,
+    maxDiscount: appSettings.maxDiscountPercentage,
   });
 
   return {
@@ -418,4 +423,116 @@ export async function getRecentAlerts() {
   .limit(5);
   
   return recent;
+}
+
+// ---------------------------------------------------------
+// Phase 9: Settings & Configuration Actions
+// ---------------------------------------------------------
+
+export async function getSettings() {
+  const res = await db.select().from(settings).where(eq(settings.id, 1)).limit(1);
+  if (res.length > 0) return res[0];
+  
+  // Create default if missing
+  const defaultSettings = await db.insert(settings).values({ id: 1 }).returning();
+  return defaultSettings[0];
+}
+
+export async function updateStoreSettings(formData: FormData) {
+  const storeName = formData.get("storeName") as string;
+  const ownerEmail = formData.get("ownerEmail") as string;
+  
+  if (!storeName || !ownerEmail) return { success: false, error: "Invalid store settings." };
+  
+  try {
+    await db.insert(settings)
+      .values({ id: 1, storeName, ownerEmail })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { storeName, ownerEmail, updatedAt: new Date() }
+      });
+    revalidatePath("/settings");
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Error updating store settings";
+    return { success: false, error: msg };
+  }
+}
+
+export async function updateAlertSettings(formData: FormData) {
+  const alertsEnabled = formData.get("alertsEnabled") === "true";
+  const alertHighRisk = formData.get("alertHighRisk") === "true";
+  const alertCriticalRisk = formData.get("alertCriticalRisk") === "true";
+  const alertExpired = formData.get("alertExpired") === "true";
+  
+  try {
+    await db.insert(settings)
+      .values({ id: 1, alertsEnabled, alertHighRisk, alertCriticalRisk, alertExpired })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { alertsEnabled, alertHighRisk, alertCriticalRisk, alertExpired, updatedAt: new Date() }
+      });
+    revalidatePath("/settings");
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Error updating alert settings";
+    return { success: false, error: msg };
+  }
+}
+
+export async function updateDiscountSettings(formData: FormData) {
+  const maxDiscountPercentage = parseInt(formData.get("maxDiscountPercentage") as string, 10);
+  
+  if (isNaN(maxDiscountPercentage) || maxDiscountPercentage < 0 || maxDiscountPercentage > 100) {
+    return { success: false, error: "Invalid discount percentage." };
+  }
+  
+  try {
+    await db.insert(settings)
+      .values({ id: 1, maxDiscountPercentage })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { maxDiscountPercentage, updatedAt: new Date() }
+      });
+    revalidatePath("/settings");
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Error updating discount settings";
+    return { success: false, error: msg };
+  }
+}
+
+export async function generatePosApiKey() {
+  const plainTextKey = "pos_live_" + randomBytes(32).toString("hex");
+  const hash = createHash("sha256").update(plainTextKey).digest("hex");
+  
+  try {
+    await db.insert(settings)
+      .values({ id: 1, posApiKeyHash: hash })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { posApiKeyHash: hash, updatedAt: new Date() }
+      });
+    revalidatePath("/settings");
+    return { success: true, key: plainTextKey };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Error generating POS key";
+    return { success: false, error: msg };
+  }
+}
+
+export async function revokePosApiKey() {
+  try {
+    await db.insert(settings)
+      .values({ id: 1, posApiKeyHash: null })
+      .onConflictDoUpdate({
+        target: settings.id,
+        set: { posApiKeyHash: null, updatedAt: new Date() }
+      });
+    revalidatePath("/settings");
+    return { success: true };
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : "Error revoking POS key";
+    return { success: false, error: msg };
+  }
 }
