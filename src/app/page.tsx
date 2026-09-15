@@ -1,0 +1,144 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { AlertCircle, Package, AlertTriangle, Clock } from "lucide-react";
+import Link from "next/link";
+import { getDashboardStats } from "@/lib/actions";
+import { getBadgeVariant } from "@/lib/expiry";
+
+export default async function Dashboard() {
+  const statsData = await getDashboardStats();
+
+  const stats = [
+    {
+      name: "Total Active Batches",
+      value: statsData.totalActiveBatches.toString(),
+      icon: Package,
+      status: "text-status-normal",
+      bg: "bg-status-normal/10"
+    },
+    {
+      name: "Expiring Soon (3-10 Days)",
+      value: statsData.expiringSoonCount.toString(),
+      icon: Clock,
+      status: "text-status-warning",
+      bg: "bg-status-warning/10"
+    },
+    {
+      name: "Critical (< 3 Days)",
+      value: statsData.criticalCount.toString(),
+      icon: AlertTriangle,
+      status: "text-status-critical",
+      bg: "bg-status-critical/10"
+    },
+    {
+      name: "Expired / Waste To Log",
+      value: statsData.expiredCount.toString(),
+      icon: AlertCircle,
+      status: "text-status-waste",
+      bg: "bg-status-waste/10"
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Overview of current stock and expiration alerts.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <Card key={stat.name} className="shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {stat.name}
+              </CardTitle>
+              <div className={`p-2 rounded-full ${stat.bg}`}>
+                <stat.icon className={`h-4 w-4 ${stat.status}`} />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="lg:col-span-4 shadow-sm">
+          <CardHeader>
+            <CardTitle>Priority Action Needed</CardTitle>
+            <CardDescription>Batches requiring immediate attention.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {statsData.topAlerts.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No priority alerts at this time.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[150px]">Batch ID</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Expiry Date</TableHead>
+                    <TableHead className="text-right">Risk</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {statsData.topAlerts.map((alert) => (
+                    <TableRow key={alert.id}>
+                      <TableCell className="font-medium text-xs">
+                        <Link href={`/inventory/${alert.id}`} className="text-primary hover:underline">
+                          {alert.batchId}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{alert.productName}</TableCell>
+                      <TableCell>{alert.expiryDate} <span className="text-muted-foreground text-xs ml-2">({alert.days}d)</span></TableCell>
+                      <TableCell className="text-right">
+                        <Badge className={getBadgeVariant(alert.risk)}>
+                          {alert.risk}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-3 shadow-sm">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Scan QR or record operations.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col gap-2">
+              <Link 
+                href="/inventory/new"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full justify-start"
+              >
+                <Package className="mr-2 h-4 w-4" /> Receive New Batch
+              </Link>
+              <Link 
+                href="/waste"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-start"
+              >
+                <AlertCircle className="mr-2 h-4 w-4 text-status-waste" /> Record Waste
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

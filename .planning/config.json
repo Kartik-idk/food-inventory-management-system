@@ -1,0 +1,11 @@
+{
+  "project_name": "Food Inventory Management System",
+  "stack": "React/Next.js, Tailwind CSS, shadcn/ui, Drizzle ORM, SQLite",
+  "scale": "Commercial/Restaurant",
+  "features": [
+    "categorization",
+    "stock-levels",
+    "expiration-tracking",
+    "qr-scanning"
+  ]
+}
