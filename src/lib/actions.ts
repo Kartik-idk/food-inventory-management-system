@@ -2,9 +2,10 @@
 
 import { db } from "@/db";
 import { products, batches, inventoryTransactions, wasteLogs } from "@/db/schema";
-import { eq, desc, sum, sql } from "drizzle-orm";
+import { eq, desc, sum, sql, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { calculateExpiryRisk } from "./expiry";
+import { calculateBaseVelocity, predictBatchOutcome } from "./forecasting";
 
 export async function getDashboardStats() {
   const allBatches = await db
@@ -342,5 +343,57 @@ export async function getReports() {
     expiredCount,
     totalWasteCount,
     totalWasteValue: totalWasteValue / 100
+  };
+}
+
+export async function getBatchForecast(batchId: number) {
+  // 1. Get the batch and product info
+  const batchRes = await db
+    .select({
+      quantity: batches.quantity,
+      expiryDate: batches.expiryDate,
+      productId: batches.productId,
+      price: products.price,
+    })
+    .from(batches)
+    .innerJoin(products, eq(batches.productId, products.id))
+    .where(eq(batches.id, batchId))
+    .limit(1);
+
+  if (!batchRes.length) return null;
+  const b = batchRes[0];
+
+  // 2. Fetch sales over the last 14 days for this product (across all batches)
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const salesRes = await db
+    .select({ totalSold: sum(inventoryTransactions.quantity).mapWith(Number) })
+    .from(inventoryTransactions)
+    .innerJoin(batches, eq(inventoryTransactions.batchId, batches.id))
+    .where(
+      and(
+        eq(batches.productId, b.productId),
+        eq(inventoryTransactions.type, "SALE"),
+        gte(inventoryTransactions.date, fourteenDaysAgo)
+      )
+    );
+
+  const totalSoldInWindow = salesRes[0]?.totalSold || 0;
+  
+  // 3. Calculate base velocity (units/day)
+  const baseVelocity = calculateBaseVelocity(totalSoldInWindow, 14);
+
+  // 4. Predict outcome
+  const outcome = predictBatchOutcome({
+    currentStock: b.quantity,
+    expiryDateStr: b.expiryDate,
+    velocity: baseVelocity,
+  });
+
+  return {
+    ...outcome,
+    baseVelocity,
+    productPrice: b.price, // stored in cents
   };
 }

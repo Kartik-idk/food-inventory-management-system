@@ -60,11 +60,16 @@ async function seed() {
   const transactionsData: { batchId: number; type: "ADD" | "SALE" | "UPDATE"; quantity: number }[] = insertedBatches.map(b => ({
     batchId: b.id,
     type: 'ADD' as const,
-    quantity: b.quantity + 2, // Added 2 more than current
+    quantity: b.quantity + 4, // Added 4 more than current to account for multiple sales
   }));
   
-  // Add some sales to make current quantity match
+  // Add multiple sales to simulate sales velocity and match current quantity
   insertedBatches.forEach(b => {
+    transactionsData.push({
+      batchId: b.id,
+      type: 'SALE' as const,
+      quantity: 2,
+    });
     transactionsData.push({
       batchId: b.id,
       type: 'SALE' as const,
