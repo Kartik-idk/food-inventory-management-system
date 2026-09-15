@@ -124,8 +124,14 @@ export default async function Dashboard() {
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-2">
               <Link 
-                href="/inventory/new"
+                href="/scan"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full justify-start"
+              >
+                <AlertCircle className="mr-2 h-4 w-4" /> Scan QR Sticker
+              </Link>
+              <Link 
+                href="/inventory/new"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-start"
               >
                 <Package className="mr-2 h-4 w-4" /> Receive New Batch
               </Link>
@@ -133,7 +139,7 @@ export default async function Dashboard() {
                 href="/waste"
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-start"
               >
-                <AlertCircle className="mr-2 h-4 w-4 text-status-waste" /> Record Waste
+                <AlertTriangle className="mr-2 h-4 w-4 text-status-waste" /> Record Waste
               </Link>
             </div>
           </CardContent>

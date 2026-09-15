@@ -225,6 +225,14 @@ export async function getBatchDetails(id: number) {
   return { ...b, risk, days };
 }
 
+export async function getInternalIdByBatchId(batchIdStr: string) {
+  const res = await db.select({ id: batches.id }).from(batches).where(eq(batches.batchId, batchIdStr)).limit(1);
+  if (res.length > 0) {
+    return res[0].id;
+  }
+  return null;
+}
+
 export async function getWasteLogs() {
   return await db
     .select({
