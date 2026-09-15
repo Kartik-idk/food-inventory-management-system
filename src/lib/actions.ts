@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from "@/db";
-import { products, batches, inventoryTransactions, wasteLogs } from "@/db/schema";
+import { products, batches, inventoryTransactions, wasteLogs, notifications } from "@/db/schema";
 import { eq, desc, sum, sql, and, gte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { calculateExpiryRisk } from "./expiry";
@@ -396,4 +396,23 @@ export async function getBatchForecast(batchId: number) {
     baseVelocity,
     productPrice: b.price, // stored in cents
   };
+}
+
+export async function getRecentAlerts() {
+  const recent = await db.select({
+    id: notifications.id,
+    type: notifications.type,
+    status: notifications.status,
+    sentAt: notifications.sentAt,
+    batchId: batches.batchId,
+    internalId: batches.id,
+    productName: products.name,
+  })
+  .from(notifications)
+  .innerJoin(batches, eq(notifications.batchId, batches.id))
+  .innerJoin(products, eq(batches.productId, products.id))
+  .orderBy(desc(notifications.createdAt))
+  .limit(5);
+  
+  return recent;
 }

@@ -33,3 +33,12 @@ export const wasteLogs = pgTable('waste_logs', {
   reason: text('reason').notNull(),
   date: timestamp('date').notNull().defaultNow(),
 });
+
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  batchId: integer('batch_id').notNull().references(() => batches.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // 'CRITICAL_RISK', 'HIGH_RISK', 'IMMEDIATE_INTERVENTION'
+  status: text('status').notNull().default('PENDING'), // 'PENDING', 'SENT', 'FAILED'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  sentAt: timestamp('sent_at'),
+});

@@ -81,7 +81,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
         <div className="space-y-6">
           <Card className="shadow-sm border-purple-100 dark:border-purple-900 bg-purple-50/30 dark:bg-purple-950/20">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-purple-900 dark:text-purple-300">Predictive Intelligence</CardTitle>
+              <CardTitle className="text-lg text-purple-900 dark:text-purple-300">Expiry Intelligence</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-2 gap-4">
@@ -93,21 +93,31 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
                   <dt className="text-xs font-medium text-muted-foreground uppercase">Expected Waste</dt>
                   <dd className="mt-1 text-lg font-bold">{Math.ceil(forecast.expectedWastage)} <span className="text-xs font-normal text-muted-foreground">units</span></dd>
                 </div>
-                <div className="col-span-2">
-                  <dt className="text-xs font-medium text-muted-foreground uppercase">Sell-Out Prediction</dt>
-                  <dd className="mt-1 text-sm">
-                    {forecast.predictedDaysToSellOut === Infinity ? (
-                      <span className="text-status-waste font-semibold">
-                        Unable to estimate. <span className="font-normal text-muted-foreground ml-1">No recent sales history.</span>
-                      </span>
-                    ) : forecast.interventionRecommended ? (
-                      <span className="text-status-warning font-semibold">
-                        Will not sell out in time. (Takes {Math.ceil(forecast.predictedDaysToSellOut)} days vs {forecast.daysToExpiry} days left).
-                      </span>
-                    ) : (
-                      <span className="text-status-normal font-semibold">
-                        On track to sell out safely.
-                      </span>
+                
+                <div className="col-span-2 pt-2 border-t border-purple-200/50 dark:border-purple-800/50">
+                  <dt className="text-xs font-medium text-muted-foreground uppercase">Recommended Action</dt>
+                  <dd className="mt-2 text-sm">
+                    {forecast.recommendedAction === 'SELL_NORMALLY' && (
+                      <div className="text-status-normal font-semibold">
+                        ✅ Sell Normally. 
+                        <span className="block text-xs font-normal text-muted-foreground mt-1">On track to sell out safely before expiry.</span>
+                      </div>
+                    )}
+                    {forecast.recommendedAction === 'DISCOUNT_RECOMMENDED' && (
+                      <div className="text-status-warning font-semibold">
+                        ⚠️ Discount Recommended: {forecast.recommendedDiscount}%
+                        <span className="block text-xs font-normal text-muted-foreground mt-1">
+                          Current velocity is too low. Applying a {forecast.recommendedDiscount}% discount is mathematically predicted to increase velocity enough to clear the stock before expiry.
+                        </span>
+                      </div>
+                    )}
+                    {forecast.recommendedAction === 'IMMEDIATE_INTERVENTION' && (
+                      <div className="text-status-critical font-semibold">
+                        🚨 Immediate Intervention Required
+                        <span className="block text-xs font-normal text-muted-foreground mt-1">
+                          {forecast.baseVelocity <= 0 ? 'No sales history exists.' : 'Even a maximum 50% discount will not clear this stock in time.'} Consider immediate manual markdown, donation, or disposal prep.
+                        </span>
+                      </div>
                     )}
                   </dd>
                 </div>
