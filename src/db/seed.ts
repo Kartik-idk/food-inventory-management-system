@@ -1,12 +1,15 @@
-import { db } from './index';
-import { products, batches, inventoryTransactions, wasteLogs } from './schema';
+import { config } from 'dotenv';
+config({ path: '.env.local' });
 
 async function seed() {
+  const { db } = await import('./index');
+  const { products, batches, inventoryTransactions, wasteLogs } = await import('./schema');
+
   console.log('Clearing existing data...');
-  db.delete(wasteLogs).run();
-  db.delete(inventoryTransactions).run();
-  db.delete(batches).run();
-  db.delete(products).run();
+  await db.delete(wasteLogs);
+  await db.delete(inventoryTransactions);
+  await db.delete(batches);
+  await db.delete(products);
 
   console.log('Seeding products...');
   
@@ -23,7 +26,7 @@ async function seed() {
     { barcode: '1234567890130', name: 'Cheddar Cheese', category: 'Dairy', price: 420 },
   ];
 
-  const insertedProducts = db.insert(products).values(productsData).returning().all();
+  const insertedProducts = await db.insert(products).values(productsData).returning();
 
   console.log('Seeding batches...');
   
@@ -51,7 +54,7 @@ async function seed() {
     { batchId: 'BATCH-20231020-0007', productId: insertedProducts[6].id, expiryDate: daysOffset(20), quantity: 0, status: 'DEPLETED' as const },
   ];
 
-  const insertedBatches = db.insert(batches).values(batchesData).returning().all();
+  const insertedBatches = await db.insert(batches).values(batchesData).returning();
 
   console.log('Seeding transactions...');
   const transactionsData: { batchId: number; type: "ADD" | "SALE" | "UPDATE"; quantity: number }[] = insertedBatches.map(b => ({
@@ -69,15 +72,19 @@ async function seed() {
     });
   });
 
-  db.insert(inventoryTransactions).values(transactionsData).run();
+  await db.insert(inventoryTransactions).values(transactionsData);
 
   console.log('Seeding waste logs...');
-  db.insert(wasteLogs).values([
+  await db.insert(wasteLogs).values([
     { batchId: insertedBatches[0].id, quantity: 1, reason: 'Spoiled in fridge' },
     { batchId: insertedBatches[1].id, quantity: 2, reason: 'Damaged packaging' },
-  ]).run();
+  ]);
 
   console.log('Seed complete!');
+  process.exit(0);
 }
 
-seed().catch(console.error);
+seed().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

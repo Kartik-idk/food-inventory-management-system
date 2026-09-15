@@ -126,24 +126,24 @@ export async function createBatch(formData: FormData) {
   const batchId = `BATCH-${dateStr}-${randomSuffix}`;
 
   try {
-    const result = db.transaction((tx) => {
+    const result = await db.transaction(async (tx) => {
       // 1. Create Batch
-      const newBatchArray = tx.insert(batches).values({
+      const newBatchArray = await tx.insert(batches).values({
         batchId,
         productId,
         quantity,
         expiryDate,
         status: "ACTIVE",
-      }).returning().all();
+      }).returning();
       
       const newBatch = newBatchArray[0];
 
       // 2. Log Transaction
-      tx.insert(inventoryTransactions).values({
+      await tx.insert(inventoryTransactions).values({
         batchId: newBatch.id,
         type: "ADD",
         quantity,
-      }).run();
+      });
 
       return newBatch;
     });
@@ -151,8 +151,12 @@ export async function createBatch(formData: FormData) {
     // Fetch product barcode to include in QR Payload
     const prod = await db.select({ barcode: products.barcode }).from(products).where(eq(products.id, productId)).limit(1);
 
-    revalidatePath("/");
-    revalidatePath("/inventory");
+    try {
+      revalidatePath("/");
+      revalidatePath("/inventory");
+    } catch (e) {
+      // Ignore Next.js cache errors outside of request context
+    }
 
     return { 
       success: true, 
@@ -248,34 +252,38 @@ export async function recordWaste(formData: FormData) {
   }
 
   try {
-    const result = db.transaction((tx) => {
-      const b = tx.select().from(batches).where(eq(batches.id, batchId)).limit(1).all();
+    const result = await db.transaction(async (tx) => {
+      const b = await tx.select().from(batches).where(eq(batches.id, batchId)).limit(1);
       if (!b.length) throw new Error("Batch not found.");
       if (b[0].quantity < quantity) throw new Error("Waste quantity exceeds available batch quantity.");
 
       const newQuantity = b[0].quantity - quantity;
       const newStatus = newQuantity === 0 ? "DEPLETED" : b[0].status;
 
-      tx.update(batches).set({ quantity: newQuantity, status: newStatus }).where(eq(batches.id, batchId)).run();
+      await tx.update(batches).set({ quantity: newQuantity, status: newStatus }).where(eq(batches.id, batchId));
       
-      tx.insert(inventoryTransactions).values({
+      await tx.insert(inventoryTransactions).values({
         batchId,
         type: "UPDATE",
         quantity: -quantity,
-      }).run();
+      });
 
-      tx.insert(wasteLogs).values({
+      await tx.insert(wasteLogs).values({
         batchId,
         quantity,
         reason,
-      }).run();
+      });
       
       return true;
     });
 
-    revalidatePath("/waste");
-    revalidatePath(`/inventory/${batchId}`);
-    revalidatePath("/");
+    try {
+      revalidatePath("/waste");
+      revalidatePath(`/inventory/${batchId}`);
+      revalidatePath("/");
+    } catch (e) {
+      // Ignore Next.js cache errors outside of request context
+    }
     return { success: true };
   } catch (error: any) {
     console.error("Error recording waste:", error);

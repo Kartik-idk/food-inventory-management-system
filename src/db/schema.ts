@@ -1,16 +1,16 @@
 import { sql } from 'drizzle-orm';
-import { text, integer, sqliteTable } from 'drizzle-orm/sqlite-core';
+import { text, integer, serial, pgTable, timestamp } from 'drizzle-orm/pg-core';
 
-export const products = sqliteTable('products', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const products = pgTable('products', {
+  id: serial('id').primaryKey(),
   barcode: text('barcode').notNull().unique(),
   name: text('name').notNull(),
   category: text('category'),
   price: integer('price').notNull().default(0), // Using integer (cents) to avoid floating point issues
 });
 
-export const batches = sqliteTable('batches', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const batches = pgTable('batches', {
+  id: serial('id').primaryKey(),
   batchId: text('batch_id').notNull().unique(), // The human-readable string for the QR code
   productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
   expiryDate: text('expiry_date').notNull(), // Stored as ISO YYYY-MM-DD
@@ -18,18 +18,18 @@ export const batches = sqliteTable('batches', {
   status: text('status', { enum: ['ACTIVE', 'EXPIRED', 'DEPLETED'] }).notNull().default('ACTIVE'),
 });
 
-export const inventoryTransactions = sqliteTable('inventory_transactions', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const inventoryTransactions = pgTable('inventory_transactions', {
+  id: serial('id').primaryKey(),
   batchId: integer('batch_id').notNull().references(() => batches.id, { onDelete: 'cascade' }),
   type: text('type', { enum: ['ADD', 'SALE', 'UPDATE'] }).notNull(),
   quantity: integer('quantity').notNull(),
-  date: text('date').notNull().default(sql`CURRENT_TIMESTAMP`),
+  date: timestamp('date').notNull().defaultNow(),
 });
 
-export const wasteLogs = sqliteTable('waste_logs', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
+export const wasteLogs = pgTable('waste_logs', {
+  id: serial('id').primaryKey(),
   batchId: integer('batch_id').notNull().references(() => batches.id, { onDelete: 'cascade' }),
   quantity: integer('quantity').notNull(),
   reason: text('reason').notNull(),
-  date: text('date').notNull().default(sql`CURRENT_TIMESTAMP`),
+  date: timestamp('date').notNull().defaultNow(),
 });
