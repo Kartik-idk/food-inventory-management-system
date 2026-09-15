@@ -9,6 +9,7 @@ import { Terminal, ShoppingCart, ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function POSSimulatorPage() {
+  const [apiKey, setApiKey] = useState('');
   const [barcode, setBarcode] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [logs, setLogs] = useState<string[]>([]);
@@ -20,6 +21,10 @@ export default function POSSimulatorPage() {
 
   const handleSimulateSale = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!apiKey) {
+      addLog('ERROR: API Key is required');
+      return;
+    }
     if (!barcode || quantity <= 0) return;
 
     setLoading(true);
@@ -30,7 +35,7 @@ export default function POSSimulatorPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer pos-sim-12345'
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           barcode,
@@ -43,7 +48,7 @@ export default function POSSimulatorPage() {
       
       if (res.ok && data.success) {
         addLog(`SUCCESS: Sale completed atomically.`);
-        data.allocations.forEach((alloc: any) => {
+        data.allocations.forEach((alloc: { batchId: string; quantityDeducted: number }) => {
           addLog(` -> Allocated ${alloc.quantityDeducted} units from ${alloc.batchId}`);
         });
         setBarcode('');
@@ -51,8 +56,9 @@ export default function POSSimulatorPage() {
       } else {
         addLog(`ERROR: ${data.error || 'Request failed'}`);
       }
-    } catch (err: any) {
-      addLog(`NETWORK ERROR: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addLog(`NETWORK ERROR: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -86,6 +92,17 @@ export default function POSSimulatorPage() {
           <CardContent>
             <form onSubmit={handleSimulateSale} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="apiKey">Integration API Key</Label>
+                <Input 
+                  id="apiKey" 
+                  type="password"
+                  placeholder="Paste your POS_API_KEY" 
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="barcode">Product Barcode</Label>
                 <Input 
                   id="barcode" 
@@ -106,7 +123,7 @@ export default function POSSimulatorPage() {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={loading || !barcode}>
+              <Button type="submit" className="w-full" disabled={loading || !barcode || !apiKey}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Process Sale via API
               </Button>

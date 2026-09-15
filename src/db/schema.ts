@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm';
+// Removed unused sql
 import { text, integer, serial, pgTable, timestamp } from 'drizzle-orm/pg-core';
 
 export const products = pgTable('products', {

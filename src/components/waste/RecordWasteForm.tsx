@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-export function RecordWasteForm({ activeBatches }: { activeBatches: any[] }) {
+export function RecordWasteForm({ activeBatches }: { activeBatches: { id: number; batchId: string; productName: string; quantity: number }[] }) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);

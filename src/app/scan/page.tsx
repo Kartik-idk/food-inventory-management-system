@@ -34,7 +34,7 @@ export default function ScanPage() {
     }
   };
 
-  const handleScan = (detectedCodes: any[]) => {
+  const handleScan = (detectedCodes: { rawValue: string }[]) => {
     if (detectedCodes && detectedCodes.length > 0 && detectedCodes[0].rawValue) {
       const raw = detectedCodes[0].rawValue;
       try {
@@ -44,7 +44,7 @@ export default function ScanPage() {
         } else {
           setError("Invalid QR Code format. Missing batchId.");
         }
-      } catch (e) {
+      } catch {
         setError("Invalid QR Code format. Not a valid JSON payload.");
       }
     }

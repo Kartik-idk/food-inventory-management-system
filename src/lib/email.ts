@@ -17,11 +17,39 @@ class ConsoleMockProvider implements EmailProvider {
 }
 
 // Future implementations could be added here (e.g. ResendProvider)
+class ResendProvider implements EmailProvider {
+  private apiKey: string;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+  async sendMail(options: EmailOptions) {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Inventory Alerts <alerts@resend.dev>',
+        to: options.to,
+        subject: options.subject,
+        text: options.body
+      })
+    });
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Resend API Error: ${res.status} ${errorText}`);
+    }
+    
+    return true;
+  }
+}
 
 export function getEmailProvider(): EmailProvider {
-  // If we had a real API key configured, we could return a different provider here:
-  // if (process.env.EMAIL_PROVIDER_KEY) return new ResendProvider();
-  
+  if (process.env.RESEND_API_KEY) {
+    return new ResendProvider(process.env.RESEND_API_KEY);
+  }
   return new ConsoleMockProvider();
 }
 

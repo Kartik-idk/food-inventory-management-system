@@ -1,5 +1,5 @@
 import { getReports } from "@/lib/actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, AlertTriangle, AlertCircle, DollarSign } from "lucide-react";
 
 export default async function ReportsPage() {

@@ -6,6 +6,8 @@ export default {
   schema: './src/db/schema.ts',
   out: './drizzle',
   dialect: 'postgresql',
+  schemaFilter: ['public'],
+  tablesFilter: ['batches', 'products', 'inventory_transactions', 'waste_logs', 'notifications'],
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },

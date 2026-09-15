@@ -19,7 +19,7 @@ export function RunAlertsButton() {
       } else {
         alert(`Failed to run alerts: ${data.error}`);
       }
-    } catch (e) {
+    } catch {
       alert("Network error running alerts.");
     } finally {
       setLoading(false);

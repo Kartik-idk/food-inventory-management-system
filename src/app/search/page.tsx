@@ -26,7 +26,7 @@ export default async function SearchPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Search Results</h1>
         <p className="text-sm text-muted-foreground">
-          Showing results for "{query}"
+          Showing results for &quot;{query}&quot;
         </p>
       </div>
 

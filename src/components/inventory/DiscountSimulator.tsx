@@ -43,7 +43,7 @@ export function DiscountSimulator({ currentStock, expiryDateStr, baseVelocity, p
           Discount Intervention Simulator
         </CardTitle>
         <CardDescription>
-          Adjust the discount to predict how it affects sell-out time and minimizes waste.
+          Adjust the discount to estimate how it affects sell-out time and minimizes waste.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

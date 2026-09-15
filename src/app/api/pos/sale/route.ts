@@ -4,13 +4,15 @@ import { products, batches, inventoryTransactions } from '@/db/schema';
 import { eq, asc } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
-// A mock API key for demonstration purposes
-const MOCK_API_KEY = "pos-sim-12345";
-
 export async function POST(request: Request) {
   try {
+    const expectedKey = process.env.POS_API_KEY;
+    if (!expectedKey) {
+      return NextResponse.json({ success: false, error: 'Internal Server Error. POS_API_KEY is not configured.' }, { status: 500 });
+    }
+
     const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== MOCK_API_KEY) {
+    if (!authHeader || !authHeader.startsWith('Bearer ') || authHeader.split(' ')[1] !== expectedKey) {
       return NextResponse.json({ success: false, error: 'Unauthorized. Invalid API Key.' }, { status: 401 });
     }
 
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
     }
     const product = prodRes[0];
 
-    let allocations: { batchId: string; quantityDeducted: number }[] = [];
+    const allocations: { batchId: string; quantityDeducted: number }[] = [];
 
     // 2. Perform FEFO Allocation atomically
     await db.transaction(async (tx) => {
@@ -85,12 +87,15 @@ export async function POST(request: Request) {
     try {
       revalidatePath('/');
       revalidatePath('/inventory');
-    } catch(e) {}
+    } catch {
+      // ignore
+    }
 
     return NextResponse.json({ success: true, allocations });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("POS Sale API Error:", error);
-    return NextResponse.json({ success: false, error: error.message || 'Internal Server Error' }, { status: 400 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: message || 'Internal Server Error' }, { status: 400 });
   }
 }

@@ -102,9 +102,10 @@ export async function registerProduct(formData: FormData) {
     
     revalidatePath("/inventory/new");
     return { success: true, product: result[0] };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error registering product:", error);
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    // Best-effort check for constraint error in Postgres
+    if (typeof error === 'object' && error !== null && 'code' in error && (error as {code: string}).code === '23505') {
       return { success: false, error: "A product with this barcode already exists." };
     }
     return { success: false, error: "Failed to register product." };
@@ -155,7 +156,7 @@ export async function createBatch(formData: FormData) {
     try {
       revalidatePath("/");
       revalidatePath("/inventory");
-    } catch (e) {
+    } catch {
       // Ignore Next.js cache errors outside of request context
     }
 
@@ -168,9 +169,10 @@ export async function createBatch(formData: FormData) {
         expiryDate: result.expiryDate
       })
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error creating batch:", error);
-    return { success: false, error: error?.message || "Failed to create batch." };
+    const msg = error instanceof Error ? error.message : "Failed to create batch.";
+    return { success: false, error: msg };
   }
 }
 
@@ -261,7 +263,7 @@ export async function recordWaste(formData: FormData) {
   }
 
   try {
-    const result = await db.transaction(async (tx) => {
+    await db.transaction(async (tx) => {
       const b = await tx.select().from(batches).where(eq(batches.id, batchId)).limit(1);
       if (!b.length) throw new Error("Batch not found.");
       if (b[0].quantity < quantity) throw new Error("Waste quantity exceeds available batch quantity.");
@@ -290,13 +292,14 @@ export async function recordWaste(formData: FormData) {
       revalidatePath("/waste");
       revalidatePath(`/inventory/${batchId}`);
       revalidatePath("/");
-    } catch (e) {
+    } catch {
       // Ignore Next.js cache errors outside of request context
     }
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error recording waste:", error);
-    return { success: false, error: error?.message || "Failed to record waste." };
+    const msg = error instanceof Error ? error.message : "Failed to record waste.";
+    return { success: false, error: msg };
   }
 }
 

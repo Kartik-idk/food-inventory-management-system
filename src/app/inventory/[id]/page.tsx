@@ -107,7 +107,7 @@ export default async function BatchDetailPage({ params }: { params: Promise<{ id
                       <div className="text-status-warning font-semibold">
                         ⚠️ Discount Recommended: {forecast.recommendedDiscount}%
                         <span className="block text-xs font-normal text-muted-foreground mt-1">
-                          Current velocity is too low. Applying a {forecast.recommendedDiscount}% discount is mathematically predicted to increase velocity enough to clear the stock before expiry.
+                          Current velocity is too low. Applying a {forecast.recommendedDiscount}% discount is estimated using a basic elasticity formula to increase velocity enough to clear the stock before expiry.
                         </span>
                       </div>
                     )}

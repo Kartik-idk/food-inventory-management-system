@@ -6,7 +6,7 @@ import { getBatchForecast } from '@/lib/actions';
 import { sendAlertEmail } from '@/lib/email';
 import { calculateExpiryRisk } from '@/lib/expiry';
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const activeBatches = await db.select({
       id: batches.id,
@@ -87,8 +87,9 @@ ACTION: ${actionText}
     }
 
     return NextResponse.json({ success: true, alertsGenerated });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Alert Cron Error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

@@ -11,7 +11,7 @@ interface PrintableQRProps {
 }
 
 export function PrintableQR({ qrPayload, onDone }: PrintableQRProps) {
-  let parsedPayload: any = {};
+  let parsedPayload: Record<string, string> = {};
   try {
     parsedPayload = JSON.parse(qrPayload);
   } catch (e) {
