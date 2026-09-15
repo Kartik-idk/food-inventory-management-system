@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, Package, AlertTriangle, Clock } from "lucide-react";
+import { AlertCircle, Package, AlertTriangle, Clock, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { getDashboardStats } from "@/lib/actions";
 import { getBadgeVariant } from "@/lib/expiry";
@@ -140,6 +140,12 @@ export default async function Dashboard() {
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-start"
               >
                 <AlertTriangle className="mr-2 h-4 w-4 text-status-waste" /> Record Waste
+              </Link>
+              <Link 
+                href="/pos"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-start"
+              >
+                <ShoppingCart className="mr-2 h-4 w-4 text-primary" /> POS Simulator
               </Link>
             </div>
           </CardContent>
