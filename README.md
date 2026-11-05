@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Food Inventory Management System
 
-## Getting Started
+> A full-stack inventory workflow for reducing food waste through batch tracking, expiry intelligence, QR-based operations, and POS integration.
 
-First, run the development server:
+This project helps a store team manage food inventory at the batch level: receive stock, monitor expiry risk, apply discount rules, record waste, and process sales using FEFO (first-expire, first-out) allocation.
+
+## Features
+
+- Batch-level inventory with product, barcode, quantity, and expiry records.
+- Expiry-risk alerts and configurable notification settings.
+- QR-code creation and scanning workflows.
+- Waste recording with reason tracking.
+- Discount simulation for time-sensitive inventory.
+- POS API simulator that allocates sales using FEFO.
+- Reporting for inventory value, expired stock, and waste cost.
+- Database migrations and seed tooling through Drizzle ORM.
+
+## Tech stack
+
+- Next.js + React + TypeScript
+- PostgreSQL + Drizzle ORM
+- Tailwind CSS and component-based UI
+- QR scanning and printable labels
+
+## Run locally
+
+### Prerequisites
+
+- Node.js 20+
+- A PostgreSQL database
+
+### Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Kartik-idk/food-inventory-management-system.git
+cd food-inventory-management-system
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+DATABASE_URL=your_postgresql_connection_string
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then initialise the database and start the app:
 
-## Learn More
+```bash
+npm run db:push
+npm run db:seed
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Available commands
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run dev       # start the development server
+npm run lint      # run ESLint
+npm run build     # create a production build
+npm run db:push   # apply the Drizzle schema
+npm run db:seed   # load sample data
+npm run db:studio # inspect the database
+```
 
-## Deploy on Vercel
+## Project structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- `src/app/` — dashboard, inventory, POS, scanning, reports, settings, and API routes
+- `src/components/` — inventory, waste, layout, and UI components
+- `src/db/` — database connection, schema, migrations, and seed logic
+- `src/lib/` — business rules for alerts, expiry, forecasting, and actions
+- `drizzle/` — committed database migrations
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Status
+
+A portfolio prototype demonstrating practical inventory operations and waste-reduction workflows. Configure secrets locally; do not commit `.env.local`.
